@@ -3,6 +3,8 @@ package org.jscep.transport;
 import org.jscep.transport.request.Request;
 import org.jscep.transport.response.ScepResponseHandler;
 
+import java.net.Authenticator;
+
 public interface Transport {
     /**
      * Sends the provided request to the <tt>URL</tt> provided in the
@@ -24,5 +26,5 @@ public interface Transport {
      *             if any transport error occurs.
      */
     <T> T sendRequest(Request msg,
-                      ScepResponseHandler<T> handler) throws TransportException;
+                      ScepResponseHandler<T> handler, Authenticator auth) throws TransportException;
 }

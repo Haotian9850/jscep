@@ -1,5 +1,6 @@
 package org.jscep.transaction;
 
+import java.net.Authenticator;
 import java.security.cert.CertStore;
 
 import org.bouncycastle.cms.CMSSignedData;
@@ -84,7 +85,7 @@ public abstract class Transaction {
      * @throws TransactionException
      *             if an error was encountered when sending this transaction.
      */
-    public abstract State send() throws TransactionException;
+    public abstract State send(Authenticator auth) throws TransactionException;
 
     /**
      * Returns the ID of this transaction.
@@ -94,9 +95,9 @@ public abstract class Transaction {
     public abstract TransactionId getId();
 
     final CMSSignedData send(final PkiOperationResponseHandler handler,
-            final Request req) throws TransactionException {
+                             final Request req, Authenticator auth) throws TransactionException {
         try {
-            return transport.sendRequest(req, handler);
+            return transport.sendRequest(req, handler, auth);
         } catch (TransportException e) {
             throw new TransactionException(e);
         }

@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -60,7 +61,8 @@ final class UrlConnectionPostTransport extends AbstractTransport {
      */
     @Override
     public <T> T sendRequest(final Request msg,
-            final ScepResponseHandler<T> handler) throws TransportException {
+                             final ScepResponseHandler<T> handler, Authenticator auth) throws TransportException {
+        System.out.println("UrlConnectionPostTransport is used!");
         if (!PkiOperationRequest.class.isAssignableFrom(msg.getClass())) {
             throw new IllegalArgumentException(
                     "POST transport may not be used for " + msg.getOperation()
@@ -71,6 +73,9 @@ final class UrlConnectionPostTransport extends AbstractTransport {
         HttpURLConnection conn;
         try {
             conn = (HttpURLConnection) url.openConnection();
+            if(auth != null){
+                conn.setAuthenticator(auth);
+            }
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/octet-stream");
             if(conn instanceof HttpsURLConnection && sslSocketFactory != null){

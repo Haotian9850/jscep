@@ -24,6 +24,7 @@ package org.jscep.client;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.Authenticator;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
@@ -128,6 +129,9 @@ public final class Client {
     private CertStoreInspectorFactory inspectorFactory = new DefaultCertStoreInspectorFactory();
     private TransportFactory transportFactory = new UrlConnectionTransportFactory();
 
+    // patch
+    private Authenticator auth;
+
 	/**
      * Constructs a new <tt>Client</tt> instance using the provided
      * <tt>CallbackHandler</tt> for the provided URL.
@@ -143,9 +147,11 @@ public final class Client {
      * @param handler
      *            the callback handler used to check the CA identity.
      */
-    public Client(final URL url, final CallbackHandler handler) {
+    public Client(final URL url, final CallbackHandler handler, Authenticator auth) {
         this.url = url;
         this.handler = handler;
+
+        this.auth = auth;
 
         validateInput();
     }
@@ -222,7 +228,7 @@ public final class Client {
         final GetCaCapsRequest req = new GetCaCapsRequest(profile);
         final Transport trans = transportFactory.forMethod(Method.GET, url);
         try {
-            return trans.sendRequest(req, new GetCaCapsResponseHandler());
+            return trans.sendRequest(req, new GetCaCapsResponseHandler(), null);
         } catch (TransportException e) {
             LOGGER.warn("AbstractTransport problem when determining capabilities.  Using empty capabilities.");
             return new Capabilities();
@@ -275,7 +281,7 @@ public final class Client {
 
         CertStore store;
         try {
-            store = trans.sendRequest(req, new GetCaCertResponseHandler());
+            store = trans.sendRequest(req, new GetCaCertResponseHandler(), this.auth);
         } catch (TransportException e) {
             throw new ClientException(e);
         }
@@ -363,7 +369,7 @@ public final class Client {
 
         try {
             return trans.sendRequest(req, new GetNextCaCertResponseHandler(
-                    signer));
+                    signer), null);
         } catch (TransportException e) {
             throw new ClientException(e);
         }
@@ -440,7 +446,7 @@ public final class Client {
                         profile), iasn, MessageType.GET_CRL);
         State state;
         try {
-            state = t.send();
+            state = t.send(null);
         } catch (TransactionException e) {
             throw new ClientException(e);
         }
@@ -540,7 +546,7 @@ public final class Client {
 
         State state;
         try {
-            state = t.send();
+            state = t.send(null);
         } catch (TransactionException e) {
             throw new ClientException(e);
         }
@@ -634,7 +640,7 @@ public final class Client {
             LOGGER.error("Error getting encoded CSR", e);
         }
 
-        return send(trans);
+        return send(trans, this.auth);
     }
 
     private boolean isSelfSigned(final X509Certificate cert)
@@ -658,14 +664,14 @@ public final class Client {
 
     public EnrollmentResponse poll(final X509Certificate identity,
             final PrivateKey identityKey, final X500Principal subject,
-            final TransactionId transId) throws ClientException,
+            final TransactionId transId, Authenticator auth) throws ClientException,
             TransactionException {
-        return poll(identity, identityKey, subject, transId, null);
+        return poll(identity, identityKey, subject, transId, null, auth);
     }
 
     public EnrollmentResponse poll(final X509Certificate identity,
             final PrivateKey identityKey, final X500Principal subject,
-            final TransactionId transId, final String profile)
+            final TransactionId transId, final String profile, Authenticator auth)
             throws ClientException, TransactionException {
         final Transport transport = createTransport(profile);
         CertStore store = getCaCertificate(profile);
@@ -680,12 +686,12 @@ public final class Client {
 
         final EnrollmentTransaction trans = new EnrollmentTransaction(
                 transport, encoder, decoder, ias, transId);
-        return send(trans);
+        return send(trans, auth);
     }
 
-    private EnrollmentResponse send(final EnrollmentTransaction trans)
+    private EnrollmentResponse send(final EnrollmentTransaction trans, Authenticator auth)
             throws TransactionException {
-        State s = trans.send();
+        State s = trans.send(auth);
 
         if (s == State.CERT_ISSUED) {
             return new EnrollmentResponse(trans.getId(), trans.getCertStore());

@@ -3,6 +3,7 @@ package org.jscep.transaction;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.io.IOException;
+import java.net.Authenticator;
 
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -100,7 +101,7 @@ public final class EnrollmentTransaction extends Transaction {
      *             if any transaction-related error occurs.
      */
     @Override
-    public State send() throws TransactionException {
+    public State send(Authenticator auth) throws TransactionException {
         CMSSignedData signedData;
         try {
             signedData = encode(request);
@@ -109,7 +110,7 @@ public final class EnrollmentTransaction extends Transaction {
         }
         LOGGER.debug("Sending {}", signedData);
         PkiOperationResponseHandler handler = new PkiOperationResponseHandler();
-        CMSSignedData res = send(handler, new PkiOperationRequest(signedData));
+        CMSSignedData res = send(handler, new PkiOperationRequest(signedData), auth);
         LOGGER.debug("Received response {}", res);
 
         CertRep response;

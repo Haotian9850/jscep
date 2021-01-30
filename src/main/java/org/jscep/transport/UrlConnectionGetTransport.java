@@ -2,10 +2,7 @@ package org.jscep.transport;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 
 import net.jcip.annotations.ThreadSafe;
 
@@ -58,7 +55,8 @@ final class UrlConnectionGetTransport extends AbstractTransport {
      */
     @Override
     public <T> T sendRequest(final Request msg,
-            final ScepResponseHandler<T> handler) throws TransportException {
+                             final ScepResponseHandler<T> handler, Authenticator auth) throws TransportException {
+        System.out.println("UrlConnectionGetTransport is used!");
         URL url = getUrl(msg.getOperation(), msg.getMessage());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Sending {} to {}", msg, url);
@@ -66,6 +64,9 @@ final class UrlConnectionGetTransport extends AbstractTransport {
         HttpURLConnection conn;
         try {
             conn = (HttpURLConnection) url.openConnection();
+            if(auth != null){
+                conn.setAuthenticator(auth);
+            }
             if(conn instanceof HttpsURLConnection && sslSocketFactory != null){
                 ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory);
             }

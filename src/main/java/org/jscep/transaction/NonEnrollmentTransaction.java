@@ -16,6 +16,8 @@ import org.jscep.transport.Transport;
 import org.jscep.transport.request.PkiOperationRequest;
 import org.jscep.transport.response.PkiOperationResponseHandler;
 
+import java.net.Authenticator;
+
 /**
  * This class represents a SCEP non-enrollment <tt>Transaction</tt>.
  * 
@@ -77,7 +79,7 @@ public final class NonEnrollmentTransaction extends Transaction {
      *             if an error was encountered when sending this transaction.
      */
     @Override
-    public State send() throws TransactionException {
+    public State send(Authenticator auth) throws TransactionException {
         final PkiOperationResponseHandler handler = new PkiOperationResponseHandler();
         CMSSignedData signedData;
         try {
@@ -86,7 +88,7 @@ public final class NonEnrollmentTransaction extends Transaction {
             throw new TransactionException(e);
         }
 
-        CMSSignedData res = send(handler, new PkiOperationRequest(signedData));
+        CMSSignedData res = send(handler, new PkiOperationRequest(signedData), null);
         CertRep response;
         try {
             response = (CertRep) decode(res);
